@@ -1,0 +1,16 @@
+﻿Experiment,Block,Stream_Mesocosm,Treatment,Excretion_P,Excretion_N
+Exp_3_Stream_Mesocosms,A,1,SHAM,2.438817031,36.58658388
+Exp_3_Stream_Mesocosms,A,2,GH,1.934811956,50.29327386
+Exp_3_Stream_Mesocosms,A,3,GH_LD,2.025146008,32.91020494
+Exp_3_Stream_Mesocosms,B,6,SHAM,2.258548903,39.91476568
+Exp_3_Stream_Mesocosms,B,7,GH,1.07615095,30.58998776
+Exp_3_Stream_Mesocosms,B,8,GH_LD,1.170841641,45.23480137
+Exp_3_Stream_Mesocosms,C,9,GH_LD,1.274658213,34.0997932
+Exp_3_Stream_Mesocosms,C,11,SHAM,1.947508458,44.89016803
+Exp_3_Stream_Mesocosms,C,12,GH,1.482688202,45.09194694
+Exp_3_Stream_Mesocosms,D,13,GH,2.239044674,36.30544014
+Exp_3_Stream_Mesocosms,D,14,GH_LD,1.673473852,28.08818124
+Exp_3_Stream_Mesocosms,D,16,SHAM,1.80512489,30.41949997
+Exp_3_Stream_Mesocosms,E,17,SHAM,2.610514619,30.72081976
+Exp_3_Stream_Mesocosms,E,18,GH,1.781014716,27.49717557
+Exp_3_Stream_Mesocosms,E,19,GH_LD,1.317594452,56.32329138

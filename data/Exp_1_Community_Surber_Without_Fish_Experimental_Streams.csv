@@ -1,0 +1,13 @@
+﻿Experiment,Channel,Section,Treatment,Position,Rhyacophilidae,Polycentropodidae,Total_Prim_Cons,Chironomidae,Hydropsychidae,Baetidae,Simuliidae,Planorbidae
+Exp_1_Experimental_Streams,A,2,Sham_NoFish,A,5,22,196,109,51,12,14,10
+Exp_1_Experimental_Streams,A,2,Sham_NoFish,B,32,64,342,229,45,10,23,35
+Exp_1_Experimental_Streams,A,2,Sham_NoFish,D,10,16,951,834,83,6,5,23
+Exp_1_Experimental_Streams,A,5,GH_NoFish,A,14,81,638,340,182,34,63,19
+Exp_1_Experimental_Streams,A,5,GH_NoFish,B,2,14,363,248,65,9,12,29
+Exp_1_Experimental_Streams,A,5,GH_NoFish,D,7,27,679,530,74,4,11,60
+Exp_1_Experimental_Streams,B,8,GH_NoFish,A,7,26,405,166,75,27,57,80
+Exp_1_Experimental_Streams,B,8,GH_NoFish,B,8,33,697,431,40,15,70,141
+Exp_1_Experimental_Streams,B,8,GH_NoFish,D,6,32,299,96,25,10,18,150
+Exp_1_Experimental_Streams,B,11,Sham_NoFish,A,5,45,409,129,100,49,57,74
+Exp_1_Experimental_Streams,B,11,Sham_NoFish,B,3,30,189,92,15,7,12,63
+Exp_1_Experimental_Streams,B,11,Sham_NoFish,D,8,14,258,82,88,8,47,33

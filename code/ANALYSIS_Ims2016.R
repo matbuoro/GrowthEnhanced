@@ -8,8 +8,8 @@ library("rstanarm")
 options(mc.cores = parallel::detectCores())
 library(loo)
 #library(betareg)
-library(bayesplot)
-library(gridExtra)
+#library(bayesplot)
+#library(gridExtra)
 
 SEED <- 1234
 set.seed(SEED)
@@ -34,7 +34,7 @@ setwd("~/Documents/RESEARCH/PROJECTS/Biodiversa/SalmoInvade/Ims/")
 #-----------------ANALYSIS---------------#
 CHAINS  = 3 # number of chains
 CORES = CHAINS # number of core
-ITER = 5000 # number of iterations
+ITER = 10000 # number of iterations
 WARM = 2000 # warmup
 ndelta = 0.99
 
@@ -118,20 +118,6 @@ if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
 ###______________________________________________###
 ###_________________NUTRIENT ____________________###
 ###______________________________________________###
-
-
-# Load dataset:
-nutrient <- read_excel("data/Stream_Channels_2016_Mat.xlsx", sheet = "Nutrient concentration")
-nutrient <- as.data.frame(nutrient)
-nutrient$PO4 <- as.numeric(nutrient$PO4)
-nutrient$NH4 <- as.numeric(nutrient$NH4)
-nutrient$Time <- as.factor(nutrient$Time)
-nutrient$Block <- as.factor(nutrient$Block)
-nutrient$Section <- as.factor(nutrient$Section)
-nutrient$Position <- as.factor(nutrient$Position)
-nutrient$Treatment <- as.factor(nutrient$Treatment)
-nutrient <- within(nutrient, Treatment <- relevel(Treatment, ref = 4)) # SHAM as reference
-#View(df)
 
 
 nutrient <- subset(nutrient, Time != "T0" & Position != "Up" )
@@ -348,6 +334,8 @@ grid.arrange(plot1, plot2, plot3, plot4, nrow=2, ncol=2)
 
 
 
+
+
 ###______________________________________________###
 ###_________________NUTRIENT FLUX____________________###
 ###______________________________________________###
@@ -367,27 +355,27 @@ flux$Treatment[flux$Treatment=="GHA"] <- "GH"
 flux$Treatment[flux$Treatment=="GHB"] <- "GH_LD"
 flux$Treatment <- as.factor(flux$Treatment)
 flux <- within(flux, Treatment <- relevel(Treatment, ref = 4)) # SHAM as reference
-#View(df)
-
-# up <- subset(nutrient,Position == "Up")
-# down <- subset(nutrient,Position == "Down")
-# # DELTA = UP - DOWN
-# deltas.NH4 <- up$NH4 - down$NH4
-# deltas.PO4 <- up$PO4 - down$PO4
-# ratio.NH4 <- (up$NH4/down$NH4) 
-# up$PO4 <- up$PO4 + .1
-# down$PO4 <- down$PO4 + .1
-# ratio.PO4 <- (up$PO4/down$PO4 )
-# delta <- cbind(up,deltas.NH4=deltas.NH4,deltas.PO4=deltas.PO4, ratio.NH4=ratio.NH4, ratio.PO4=ratio.PO4)
-# delta <- subset(delta, Time != "T0")
-
+# #View(df)
+# 
+# # up <- subset(nutrient,Position == "Up")
+# # down <- subset(nutrient,Position == "Down")
+# # # DELTA = UP - DOWN
+# # deltas.NH4 <- up$NH4 - down$NH4
+# # deltas.PO4 <- up$PO4 - down$PO4
+# # ratio.NH4 <- (up$NH4/down$NH4) 
+# # up$PO4 <- up$PO4 + .1
+# # down$PO4 <- down$PO4 + .1
+# # ratio.PO4 <- (up$PO4/down$PO4 )
+# # delta <- cbind(up,deltas.NH4=deltas.NH4,deltas.PO4=deltas.PO4, ratio.NH4=ratio.NH4, ratio.PO4=ratio.PO4)
+# # delta <- subset(delta, Time != "T0")
+# 
 ###____________ DELTA NH4    _____________ ###
 fit1 <- stan_glmer(
-  Flux_NH4 ~Treatment*Time+(1|Block/Section), 
+  Flux_NH4 ~Treatment*Time+(1|Block/Section),
   #family = poisson(link = log),
   na.action = "na.omit",
   data = flux,
-  prior = student_t(df = 7), 
+  prior = student_t(df = 7),
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
   control=list(adapt_delta=ndelta),
@@ -395,11 +383,11 @@ fit1 <- stan_glmer(
 )
 
 fit2 <- stan_glmer(
-  Flux_NH4 ~Treatment+Time+(1|Block/Section), 
+  Flux_NH4 ~Treatment+Time+(1|Block/Section),
   #family = poisson(link = log),
   na.action = "na.omit",
   data = flux,
-  prior = student_t(df = 7), 
+  prior = student_t(df = 7),
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
   control=list(adapt_delta=ndelta),
@@ -409,11 +397,11 @@ fit2 <- stan_glmer(
 ## Compare models
 loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position +(1|Block/Section)
 loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position +(1|Block/Section)
-loo <- compare(loo1, loo2) 
-# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
+loo <- compare(loo1, loo2)
+# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher.
 # If the difference is be positive then the second model is preferred.
 
-#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
+#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred.
 #That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
 
 # Select the best model
@@ -438,11 +426,11 @@ if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
 
 ###____________ DELTA PO4    _____________ ###
 fit1 <- stan_glmer(
-  Flux_PO4 ~Treatment*Time+(1|Block/Section), 
+  Flux_PO4 ~Treatment*Time+(1|Block/Section),
   #family = poisson(link = log),
   na.action = "na.omit",
   data = flux,
-  prior = student_t(df = 7), 
+  prior = student_t(df = 7),
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
   control=list(adapt_delta=ndelta),
@@ -450,11 +438,11 @@ fit1 <- stan_glmer(
 )
 
 fit2 <- stan_glmer(
-  Flux_PO4 ~Treatment+Time+(1|Block/Section), 
+  Flux_PO4 ~Treatment+Time+(1|Block/Section),
   #family = poisson(link = log),
   na.action = "na.omit",
   data = flux,
-  prior = student_t(df = 7), 
+  prior = student_t(df = 7),
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
   control=list(adapt_delta=ndelta),
@@ -464,11 +452,11 @@ fit2 <- stan_glmer(
 ## Compare models
 loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position +(1|Block/Section)
 loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position +(1|Block/Section)
-loo <- compare(loo1, loo2) 
-# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
+loo <- compare(loo1, loo2)
+# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher.
 # If the difference is be positive then the second model is preferred.
 
-#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
+#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred.
 #That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
 
 # Select the best model
@@ -486,58 +474,58 @@ if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
   ### SAVE
   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
 }
-
-
-
-###____________ DELTA Flux_NNO3    _____________ ###
-fit1 <- stan_glmer(
-  Flux_NNO3 ~Treatment+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = subset(flux, Time=="T2"),
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-best <-fit1
-
-## RESULTS
-#any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
-if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
-  model.name = "Flux_NNO3"
-  Flux_NNO3 <- best
-  ### SAVE
-  save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
-}
-
-
-###____________ DELTA Flux_N_total    _____________ ###
-fit1 <- stan_glmer(
-  Flux_N_total ~Treatment+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = subset(flux, Time=="T2"),
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-best <-fit1
-
-## RESULTS
-#any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
-if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
-  model.name = "Flux_N_total"
-  Flux_N_total <- best
-  ### SAVE
-  save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
-}
-
+# 
+# 
+# 
+# ###____________ DELTA Flux_NNO3    _____________ ###
+# fit1 <- stan_glmer(
+#   Flux_NNO3 ~Treatment+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = subset(flux, Time=="T2"),
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# best <-fit1
+# 
+# ## RESULTS
+# #any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
+# if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
+#   model.name = "Flux_NNO3"
+#   Flux_NNO3 <- best
+#   ### SAVE
+#   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
+# }
+# 
+# 
+# ###____________ DELTA Flux_N_total    _____________ ###
+# fit1 <- stan_glmer(
+#   Flux_N_total ~Treatment+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = subset(flux, Time=="T2"),
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# best <-fit1
+# 
+# ## RESULTS
+# #any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
+# if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
+#   model.name = "Flux_N_total"
+#   Flux_N_total <- best
+#   ### SAVE
+#   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
+# }
+# 
 
 
 
@@ -826,250 +814,250 @@ if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
 
 
 
-###____________ Cyanobacteria    _____________ ###
-fit1 <- stan_glmer(
-  Cyanobacteria ~ Treatment*Time*Position_Bis+(1|Block/Section),
-  #family = binomial(link=logit),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit2 <- stan_glmer(
-  Cyanobacteria ~Treatment*Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-
-fit3 <- stan_glmer(
-  Cyanobacteria ~Treatment + Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit4 <- stan_glmer(
-  Cyanobacteria ~Treatment*Position_Bis+ Time +(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-
-## Compare models
-loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
-loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
-loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
-loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
-loo <- compare(loo1, loo2, loo3, loo4) 
-# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
-# If the difference is be positive then the second model is preferred.
-
-#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
-#That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
-
-# Select the best model
-# elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
-# best <- get(paste0("fit",which.max(elpd_loo)))
-looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
-best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
-
-## RESULTS
-#any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
-if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
-  model.name = "Cyanobacteria"
-  Cyanobacteria <- best
-  ### SAVE
-  save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
-}
-
-
-
-
-
-###____________ Green_algae    _____________ ###
-fit1 <- stan_glmer(
-  log(Green_algae +1) ~ Treatment*Time*Position_Bis+(1|Block/Section),
-  #family = binomial(link=logit),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit2 <- stan_glmer(
-  log(Green_algae +1) ~Treatment*Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-
-fit3 <- stan_glmer(
-  log(Green_algae +1) ~Treatment + Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit4 <- stan_glmer(
-  log(Green_algae +1) ~Treatment*Position_Bis+ Time +(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-
-## Compare models
-loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
-loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
-loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
-loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
-loo <- compare(loo1, loo2, loo3, loo4) 
-# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
-# If the difference is be positive then the second model is preferred.
-
-#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
-#That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
-
-# Select the best model
-# elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
-# best <- get(paste0("fit",which.max(elpd_loo)))
-looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
-best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
-
-
-
-## RESULTS
-#any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
-if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
-  model.name = "Green_algae"
-  Green_algae <- best
-  ### SAVE
-  save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
-}
+# ###____________ Cyanobacteria    _____________ ###
+# fit1 <- stan_glmer(
+#   Cyanobacteria ~ Treatment*Time*Position_Bis+(1|Block/Section),
+#   #family = binomial(link=logit),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit2 <- stan_glmer(
+#   Cyanobacteria ~Treatment*Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# fit3 <- stan_glmer(
+#   Cyanobacteria ~Treatment + Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit4 <- stan_glmer(
+#   Cyanobacteria ~Treatment*Position_Bis+ Time +(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# ## Compare models
+# loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
+# loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
+# loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
+# loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
+# loo <- compare(loo1, loo2, loo3, loo4) 
+# # The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
+# # If the difference is be positive then the second model is preferred.
+# 
+# #Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
+# #That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
+# 
+# # Select the best model
+# # elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
+# # best <- get(paste0("fit",which.max(elpd_loo)))
+# looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
+# best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
+# 
+# ## RESULTS
+# #any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
+# if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
+#   model.name = "Cyanobacteria"
+#   Cyanobacteria <- best
+#   ### SAVE
+#   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
+# }
 
 
 
 
 
+# ###____________ Green_algae    _____________ ###
+# fit1 <- stan_glmer(
+#   log(Green_algae +1) ~ Treatment*Time*Position_Bis+(1|Block/Section),
+#   #family = binomial(link=logit),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit2 <- stan_glmer(
+#   log(Green_algae +1) ~Treatment*Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# fit3 <- stan_glmer(
+#   log(Green_algae +1) ~Treatment + Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit4 <- stan_glmer(
+#   log(Green_algae +1) ~Treatment*Position_Bis+ Time +(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# ## Compare models
+# loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
+# loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
+# loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
+# loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
+# loo <- compare(loo1, loo2, loo3, loo4) 
+# # The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
+# # If the difference is be positive then the second model is preferred.
+# 
+# #Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
+# #That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
+# 
+# # Select the best model
+# # elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
+# # best <- get(paste0("fit",which.max(elpd_loo)))
+# looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
+# best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
+# 
+# 
+# 
+# ## RESULTS
+# #any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
+# if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
+#   model.name = "Green_algae"
+#   Green_algae <- best
+#   ### SAVE
+#   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
+# }
 
-###____________ Diatoms    _____________ ###
-fit1 <- stan_glmer(
-  log(Diatoms + 1) ~ Treatment*Time*Position_Bis+(1|Block/Section),
-  #family = binomial(link=logit),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit2 <- stan_glmer(
-  log(Diatoms +1) ~Treatment*Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
 
 
-fit3 <- stan_glmer(
-  log(Diatoms +1) ~Treatment + Time + Position_Bis+(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
-
-fit4 <- stan_glmer(
-  log(Diatoms +1) ~Treatment*Position_Bis+ Time +(1|Block/Section), 
-  #family = poisson(link = log),
-  na.action = "na.omit",
-  data = sp,
-  prior = student_t(df = 7), 
-  prior_intercept = student_t(df = 7),
-  chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
-  control=list(adapt_delta=ndelta),
-  QR = TRUE
-)
 
 
-## Compare models
-loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
-loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
-loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
-loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
-loo <- compare(loo1, loo2, loo3, loo4) 
-# The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
-# If the difference is be positive then the second model is preferred.
 
-#Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
-#That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
-
-# Select the best model
-# elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
-# best <- get(paste0("fit",which.max(elpd_loo)))
-looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
-best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
-
-## RESULTS
-#any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
-if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
-  model.name = "Diatoms"
-  Diatoms <- best
-  ### SAVE
-  save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
-}
+# ###____________ Diatoms    _____________ ###
+# fit1 <- stan_glmer(
+#   log(Diatoms + 1) ~ Treatment*Time*Position_Bis+(1|Block/Section),
+#   #family = binomial(link=logit),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit2 <- stan_glmer(
+#   log(Diatoms +1) ~Treatment*Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# fit3 <- stan_glmer(
+#   log(Diatoms +1) ~Treatment + Time + Position_Bis+(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# fit4 <- stan_glmer(
+#   log(Diatoms +1) ~Treatment*Position_Bis+ Time +(1|Block/Section), 
+#   #family = poisson(link = log),
+#   na.action = "na.omit",
+#   data = sp,
+#   prior = student_t(df = 7), 
+#   prior_intercept = student_t(df = 7),
+#   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
+#   control=list(adapt_delta=ndelta),
+#   QR = TRUE
+# )
+# 
+# 
+# ## Compare models
+# loo1 <- loo(fit1,k_threshold = 0.7) # Treatment*Time*Position_Bis +(1|Block/Section)
+# loo2 <- loo(fit2,k_threshold = 0.7) # Treatment*Time+Position_Bis +(1|Block/Section)
+# loo3 <- loo(fit3,k_threshold = 0.7) # Treatment+Time+Position_Bis +(1|Block/Section)
+# loo4 <- loo(fit4,k_threshold = 0.7) # Treatment*Position_Bis+Time +(1|Block/Section)
+# loo <- compare(loo1, loo2, loo3, loo4) 
+# # The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. 
+# # If the difference is be positive then the second model is preferred.
+# 
+# #Evaluating the expected log predictive distribution using loo reveals that the second of the two models is slightly preferred. 
+# #That said, in this case the standard error of the difference in elpd is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.
+# 
+# # Select the best model
+# # elpd_loo <- c(loo1$elpd_loo, loo2$elpd_loo, loo3$elpd_loo, loo4$elpd_loo)
+# # best <- get(paste0("fit",which.max(elpd_loo)))
+# looic <- c(loo1$looic, loo2$looic, loo3$looic, loo4$looic)
+# best <- get(paste0("fit",which.min(looic))) # lower is better (as AIC)
+# 
+# ## RESULTS
+# #any(summary(best)[, "Rhat"] > 1.1) # should be FALSE
+# if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
+#   model.name = "Diatoms"
+#   Diatoms <- best
+#   ### SAVE
+#   save(best,loo, file=paste0("results/IMS2016_",model.name,".Rdata"))
+# }
 
 
 
@@ -1239,7 +1227,7 @@ if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
 
 
 ### SAVE ALL
-save(Sum_SRP, Sum_NH4, NH4, PO4, FluxNH4, FluxPO4, FluxNH4, FluxPO4, Fila, K_CM, K_FM ,Cyanobacteria,Green_algae,Diatoms,All_Chloro, Nb_Chironomidae, file=paste0("results/IMS2016.Rdata"))
+#save(Sum_SRP, Sum_NH4, NH4, PO4, FluxNH4, FluxPO4, FluxNH4, FluxPO4, Fila, K_CM, K_FM ,Cyanobacteria,Green_algae,Diatoms,All_Chloro, Nb_Chironomidae, file=paste0("results/IMS2016.Rdata"))
 
 
 
@@ -1250,7 +1238,19 @@ save(Sum_SRP, Sum_NH4, NH4, PO4, FluxNH4, FluxPO4, FluxNH4, FluxPO4, Fila, K_CM,
 ###______________OUTPUTS_______ __________________###
 ###______________________________________________###
 
-model.name <- c("Sum_SRP", "Sum_NH4", "NH4", "PO4", "FluxNH4", "FluxPO4", "Fila", "K_CM", "K_FM","Cyanobacteria","Green_algae","Diatoms","All_Chloro", "Nb_Chironomidae")
+model.name <- c("Sum_SRP"
+                , "Sum_NH4"
+                #, "NH4", "PO4"
+                , "FluxNH4"
+                , "FluxPO4"
+                , "Fila"
+                , "K_CM"
+                , "K_FM"
+                #,"Cyanobacteria"
+                #,"Green_algae","Diatoms"
+                ,"All_Chloro"
+                , "Nb_Chironomidae"
+                )
 
 
 
@@ -1299,7 +1299,7 @@ print(best$family)
 cat("\n Posterior distributions for the effect of Treatments:\n")
 mcmc <- as.array(best$stanfit)
 
-if(myvar == "Sum_SRP" & myvar == "Sum_NH4") {  
+if(myvar == "Sum_SRP" || myvar == "Sum_NH4") {  
   SHAM <- mcmc[,1:CORES,"(Intercept)"]
   TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
   TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
@@ -1338,9 +1338,9 @@ if(myvar != "Sum_SRP" & myvar != "Sum_NH4") {
     ,GHvsGHLD = as.vector(GHvsGHLD)
     ,GHvsNF = as.vector(GHvsNF)
     ,GHLDvsNF = as.vector(GHLDvsNF)
-    ,GH2 = as.vector(TreatmentGH2)
-    ,GHLD2 = as.vector(TreatmentGHLD2)
-    ,NF2 = as.vector(TreatmentNF2)
+    ,GH2 = as.vector(TreatmentGH) + as.vector(TreatmentGH2)
+    ,GHLD2 = as.vector(TreatmentGHLD) + as.vector(TreatmentGHLD2)
+    ,NF2 = as.vector(TreatmentNF) + as.vector(TreatmentNF2)
     ,GHvsGHLD2 = as.vector(GHvsGHLD2)
     ,GHvsNF2 = as.vector(GHvsNF2)
     ,GHLDvsNF2 = as.vector(GHLDvsNF2)
@@ -1358,8 +1358,8 @@ if(myvar != "Sum_SRP" & myvar != "Sum_NH4") {
 }
 
 res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-table<- rbind(res,"P>0"=p)
+p <- round(apply(deltas, 2, function(x) gf(x)),3) # P: confidence that the parameter is positive (P>0)
+table<- rbind(res,"P"=p)
 
 print(table)
 cat("P>0: Proportion of positive posterior values, i.e. confidence that the effect is positive \n")
@@ -1377,109 +1377,118 @@ cat("P>0: Proportion of positive posterior values, i.e. confidence that the effe
  # cat("Proportion of the posterior with the same sign as the mean: ", round(gf(TreatmentNF)*100,1),"%\n")
  # }
 
-cat( "\n Posterior check: comparison between observed values (y) and predicted values (yrep) \n")
-cat("Ratio (y/yrep) should include the value 1\n")
-# ratio y vs yrep
-r=NULL;for (i in 1:nrow(yrep)){r[i]<-mean(y/yrep[i,], na.rm=TRUE)}
-cat("Ratio (y/yrep): ", median(r),"[",quantile(r, probs=0.025),";",quantile(r, probs=0.975),"]\n")
+# cat( "\n Posterior check: comparison between observed values (y) and predicted values (yrep) \n")
+# cat("Ratio (y/yrep) should include the value 1\n")
+# # ratio y vs yrep
+# r=NULL;for (i in 1:nrow(yrep)){r[i]<-mean(y/yrep[i,], na.rm=TRUE)}
+# cat("Ratio (y/yrep): ", median(r),"[",quantile(r, probs=0.025),";",quantile(r, probs=0.975),"]\n")
 } #End loop 
 sink()
 
 
-## FIGURES POSTERIOR CHECK
-for (myvar in model.name) {
-  #myvar= "Sum_SRP"
-pdf(paste0("results/IMS2016_",myvar,"_check.pdf"),width=8, height = 8)
-  
-  ## LOAD MODEL
-  best = loo = mcmc = NULL
-  load(paste0("results/IMS2016_",myvar,".Rdata"))
-  #best <- get(myvar)
-  #mcmc <- as.array(best$stanfit)
-  
-  ## POSTERIOR CHECK
-  y <- best$y
-  yrep <- posterior_predict(best)
-  group <- best$data$Treatment
-  
+# ## FIGURES POSTERIOR CHECK
+# for (myvar in model.name) {
+#   #myvar= "Sum_SRP"
+# pdf(paste0("results/IMS2016_",myvar,"_check.pdf"),width=8, height = 8)
+#   
+#   ## LOAD MODEL
+#   best = loo = mcmc = NULL
+#   load(paste0("results/IMS2016_",myvar,".Rdata"))
+#   #best <- get(myvar)
+#   #mcmc <- as.array(best$stanfit)
+#   
+#   ## POSTERIOR CHECK
+#   y <- best$y
+#   yrep <- posterior_predict(best)
+#   group <- best$data$Treatment
+#   
+# 
+# #par(mfrow=c(2,2))
+# #par(mar=c(3.5, 4.5, 4.5, 1.5))
+# # # The distribution of a test statistic T(yrep), or a pair of test statistics, over the simulated datasets in yrep, compared to the observed value T(y)
+# plot1 <- ppc_stat(y, yrep)
+# plot2 <- ppc_stat_2d(y, yrep, stat = c("median", "mean")) + legend_move("bottom")
+# #color_scheme_set("teal")
+# #ppc_stat_grouped(y, yrep, group)
+# plot3 <- pp_check(y, yrep, ppc_dens_overlay)
+# # pp_check(y, yrep, fun = "stat_grouped", group = group, stat = "median")
+# # # Scatterplots of the observed data y vs. simulated/replicated data yrep from the posterior predictive distribution
+# plot4 <- ppc_scatter_avg(y, yrep)
+# # ppc_scatter_avg_grouped(y, yrep, group, alpha = 0.7)
+# 
+# grid.arrange(plot1, plot2, plot3, plot4, nrow=2, ncol=2)
+# dev.off()
+# } 
 
-#par(mfrow=c(2,2))
-#par(mar=c(3.5, 4.5, 4.5, 1.5))
-# # The distribution of a test statistic T(yrep), or a pair of test statistics, over the simulated datasets in yrep, compared to the observed value T(y)
-plot1 <- ppc_stat(y, yrep)
-plot2 <- ppc_stat_2d(y, yrep, stat = c("median", "mean")) + legend_move("bottom")
-#color_scheme_set("teal")
-#ppc_stat_grouped(y, yrep, group)
-plot3 <- pp_check(y, yrep, ppc_dens_overlay)
-# pp_check(y, yrep, fun = "stat_grouped", group = group, stat = "median")
-# # Scatterplots of the observed data y vs. simulated/replicated data yrep from the posterior predictive distribution
-plot4 <- ppc_scatter_avg(y, yrep)
-# ppc_scatter_avg_grouped(y, yrep, group, alpha = 0.7)
 
-grid.arrange(plot1, plot2, plot3, plot4, nrow=2, ncol=2)
-dev.off()
-} 
+
+
 
 
 
 ## FIGURE RESULTS
-pdf(paste0("results/IMS2016_excretion.pdf"),width=8, height = 8)
-#layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
-par(mfrow=c(1,1))
-#par(mar=c(3.5, 4.5, 4.5, 1.5))
-model.name <- c("Sum_SRP", "Sum_NH4")
-for (myvar in model.name) {
-  
-  ## LOAD MODEL
-  best = loo = mcmc = NULL
-  load(paste0("results/IMS2016_",myvar,".Rdata"))
-  #best <- get(myvar)
-  mcmc <- as.array(best$stanfit)
-  
-  # ## POSTERIOR CHECK
-  # y <- best$y
-  # yrep <- posterior_predict(best)
-  # group <- best$data$Treatment
-  
-#if(myvar == "Sum_SRP" & myvar == "Sum_NH4") {
-  SHAM <- mcmc[,1:CORES,"(Intercept)"]
-  TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
-  TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
-  # Difference between treatments
-  GHvsGHLD <- TreatmentGH - TreatmentGHLD;
-  
-  # posterior distributions
-  deltas <- cbind(GH = as.vector(TreatmentGH)
-                  ,GHLD = as.vector(TreatmentGHLD)
-                  ,GHvsGHLD = as.vector(GHvsGHLD)
-  )
-  
-  res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-  p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-  
-  plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-  axis(1, labels=c("GH", "GHLD", "GH-GHLD"), at = 1:ncol(deltas),cex=.7)
-  abline(h=0,lty=2)
-  points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-  segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
-  segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
-  for (i in 1:ncol(deltas)){
-    y=max(res[,i])+.15
-    text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
-    #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
-    #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
-  } # end loop i
-#} # end if
-
-} # end loop myvar
-dev.off()
 
 
 
 
-pdf(paste0("results/IMS2016_nutrient.pdf"),width=8, height = 8)
-layout(matrix(c(1,1,1,2,3,4), 2, 3, byrow = TRUE))
-#par(mfrow=c(1,1))
+# pdf(paste0("results/IMS2016_excretion.pdf"),width=8, height = 8)
+# #layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
+# par(mfrow=c(1,2))
+# #par(mar=c(3.5, 4.5, 4.5, 1.5))
+# model.name <- c("Sum_SRP", "Sum_NH4")
+# for (myvar in model.name) {
+#   
+#   ## LOAD MODEL
+#   best = loo = mcmc = NULL
+#   load(paste0("results/IMS2016_",myvar,".Rdata"))
+#   #best <- get(myvar)
+#   mcmc <- as.array(best$stanfit)
+#   
+#   # ## POSTERIOR CHECK
+#   # y <- best$y
+#   # yrep <- posterior_predict(best)
+#   # group <- best$data$Treatment
+#   
+# #if(myvar == "Sum_SRP" & myvar == "Sum_NH4") {
+#   SHAM <- mcmc[,1:CORES,"(Intercept)"]
+#   TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
+#   TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
+#   # Difference between treatments
+#   GHvsGHLD <- TreatmentGHLD - TreatmentGH;
+#   
+#   # posterior distributions
+#   deltas <- cbind(GH = as.vector(TreatmentGH)
+#                   ,GHLD = as.vector(TreatmentGHLD)
+#                   ,GHvsGHLD = as.vector(GHvsGHLD)
+#   )
+#   
+#   q <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
+#   p <- round(apply(deltas, 2, function(x) gf(x)),3)
+#   res <- t(rbind(q,p))
+#   
+#   plot(NULL, xlim=c(0.5,nrow(res)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+#   axis(1, labels=c("GH", "GHLD", "GH-GHLD"), at = 1:nrow(res),cex=.7)
+#   abline(h=0,lty=2)
+#   points(1:nrow(res),res[1:nrow(res),"50%"], pch=16,cex=1.5)
+#   segments(1:nrow(res),res[1:nrow(res),"2.5%"],1:nrow(res),res[1:nrow(res),"97.5%"])
+#   segments(1:nrow(res),res[1:nrow(res),"25%"],1:nrow(res),res[1:nrow(res),"75%"],lwd=3)
+#   for (i in 1:nrow(res)){
+#     y=max(res[,i])+.15
+#     text(i,y-.05,  paste0(res[i,"50%"]," [",res[i,"2.5%"],";",res[i,"97.5%"],"]; P = ",res[i,"p"]),cex=0.5)
+#     #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
+#     #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
+#   } # end loop i
+# #} # end if
+# 
+# } # end loop myvar
+# dev.off()
+
+
+
+
+#pdf(paste0("results/IMS2016_nutrient.pdf"),width=8, height = 8)
+#layout(matrix(c(1,1,1,2,3,4), 2, 3, byrow = TRUE))
+par(mfrow=c(1,2))
 #par(mar=c(3.5, 4.5, 4.5, 1.5))
 model.name <- c("NH4", "PO4")#, "FluxNH4", "FluxPO4")
 for (myvar in model.name) {
@@ -1502,37 +1511,37 @@ for (myvar in model.name) {
   TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
   TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
   # Difference between treatments
-  GHvsGHLD <- TreatmentGH - TreatmentGHLD;
-  GHvsNF <- TreatmentGH - TreatmentNF; 
-  GHLDvsNF <- TreatmentGHLD - TreatmentNF;
+  GHvsGHLD <- TreatmentGHLD - TreatmentGH;
+  #GHvsNF <- TreatmentGH - TreatmentNF; 
+  #GHLDvsNF <- TreatmentGHLD - TreatmentNF;
   
   # posterior distributions
   deltas <- cbind(GH = as.vector(TreatmentGH)
                   ,GHLD = as.vector(TreatmentGHLD)
                   ,NF = as.vector(TreatmentNF)
                   ,GHvsGHLD = as.vector(GHvsGHLD)
-                  ,GHvsNF = as.vector(GHvsNF)
-                  ,GHLDvsNF = as.vector(GHLDvsNF)
+                  #,GHvsNF = as.vector(GHvsNF)
+                  #,GHLDvsNF = as.vector(GHLDvsNF)
   )
   
-  res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-  p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
+  q <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
+  p <- round(apply(deltas, 2, function(x) gf(x)),3)
+  res <- t(rbind(q,p))
   
   # PLOT
-  plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-  axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
+  plot(NULL, xlim=c(0.5,nrow(res)+.5),ylim=c(min(res[,1:5]), max(res[,1:5])+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+  axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD"), at = 1:nrow(res),cex=.7)
   abline(h=0,lty=2)
-  points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-  segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
-  segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
-  for (i in 1:ncol(deltas)){
-    y=max(res[,i])+.15
-    text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
+  points(1:nrow(res),res[1:nrow(res),"50%"], pch=16,cex=1.5)
+  segments(1:nrow(res),res[1:nrow(res),"2.5%"],1:nrow(res),res[1:nrow(res),"97.5%"])
+  segments(1:nrow(res),res[1:nrow(res),"25%"],1:nrow(res),res[1:nrow(res),"75%"],lwd=3)
+  for (i in 1:nrow(res)){
+    y=max(res[i,1:5])+.05
+    text(i,y,  paste0(res[i,"50%"]," [",res[i,"2.5%"],";",res[i,"97.5%"],"]; P = ",res[i,"p"]),cex=0.75)
     #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
     #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
   } # end loop i
-  # } # end if  
-  
+
 
 
 
@@ -1610,11 +1619,17 @@ dev.off()
 
 
 
+
+
+
+
+mycol <- c("#6B6B6B", "#009ACD", "#5CACEE", "#6B6B6B50")
+
 pdf(paste0("results/IMS2016_Fluxnutrient.pdf"),width=8, height = 8)
-layout(matrix(c(1,1,1,2,3,4), 2, 3, byrow = TRUE))
-#par(mfrow=c(1,1))
-#par(mar=c(3.5, 4.5, 4.5, 1.5))
-model.name <- c("FluxNH4", "FluxPO4")
+#layout(matrix(c(1,1,1,2,3,4), 2, 3, byrow = TRUE))
+par(mfrow=c(3,3))
+par(mar=c(3.5, 4.5, 4.5, 1.5))
+model.name <- c("FluxNH4", "FluxPO4", "Flux_NNO3", "Flux_N_total")
 for (myvar in model.name) {
   
   ## LOAD MODEL
@@ -1623,48 +1638,48 @@ for (myvar in model.name) {
   #best <- get(myvar)
   mcmc <- as.array(best$stanfit)
   
-  ## POSTERIOR CHECK
-  # y <- best$y
-  # yrep <- posterior_predict(best)
-  # group <- best$data$Treatment
-  
-  
-  #if(myvar != "Sum_SRP" & myvar != "Sum_NH4") {  
-  SHAM <- mcmc[,1:CORES,"(Intercept)"]
-  TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
-  TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
-  TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
-  # Difference between treatments
-  GHvsGHLD <- TreatmentGH - TreatmentGHLD;
-  GHvsNF <- TreatmentGH - TreatmentNF; 
-  GHLDvsNF <- TreatmentGHLD - TreatmentNF;
-  
-  # posterior distributions
-  deltas <- cbind(GH = as.vector(TreatmentGH)
-                  ,GHLD = as.vector(TreatmentGHLD)
-                  ,NF = as.vector(TreatmentNF)
-                  ,GHvsGHLD = as.vector(GHvsGHLD)
-                  ,GHvsNF = as.vector(GHvsNF)
-                  ,GHLDvsNF = as.vector(GHLDvsNF)
-  )
-  
-  res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-  p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-  
-  # PLOT
-  plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-  axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
-  abline(h=0,lty=2)
-  points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-  segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
-  segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
-  for (i in 1:ncol(deltas)){
-    y=max(res[,i])+.15
-    text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
-    #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
-    #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
-  } # end loop i
-  # } # end if  
+  # ## POSTERIOR CHECK
+  # # y <- best$y
+  # # yrep <- posterior_predict(best)
+  # # group <- best$data$Treatment
+  # 
+  # 
+  # #if(myvar != "Sum_SRP" & myvar != "Sum_NH4") {  
+  # SHAM <- mcmc[,1:CORES,"(Intercept)"]
+  # TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
+  # TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
+  # TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
+  # # Difference between treatments
+  # GHvsGHLD <- TreatmentGH - TreatmentGHLD;
+  # GHvsNF <- TreatmentGH - TreatmentNF; 
+  # GHLDvsNF <- TreatmentGHLD - TreatmentNF;
+  # 
+  # # posterior distributions
+  # deltas <- cbind(GH = as.vector(TreatmentGH)
+  #                 ,GHLD = as.vector(TreatmentGHLD)
+  #                 ,NF = as.vector(TreatmentNF)
+  #                 ,GHvsGHLD = as.vector(GHvsGHLD)
+  #                 ,GHvsNF = as.vector(GHvsNF)
+  #                 ,GHLDvsNF = as.vector(GHLDvsNF)
+  # )
+  # 
+  # res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
+  # p <- round(apply(deltas, 2, function(x) gf(x)),3) # P: confidence that the parameter is positive (P>0)
+  # 
+  # # PLOT
+  # plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+  # axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
+  # abline(h=0,lty=2)
+  # points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
+  # segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
+  # segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
+  # for (i in 1:ncol(deltas)){
+  #   y=max(res[,i])+.15
+  #   text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P = ",p[i]),cex=0.5)
+  #   #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
+  #   #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
+  # } # end loop i
+  # # } # end if  
   
   
   
@@ -1672,72 +1687,62 @@ for (myvar in model.name) {
   
   
   # Precictive values
-  nd <- data.frame(Time = c(rep("T0",4), rep("T1",4), rep("T2", 4)), Treatment = c(rep("SHAM",1),rep("GH",1),rep("GH_LD",1),rep("NF",1)))#, Position = rep(rev(levels(best$data$Position)),12))#,Channel = rep(c(rep("A",5),rep("B",5)),2))
+  if (myvar == "FluxNH4" || myvar == "FluxPO4") {  
+    time=1:3
+    nd <- data.frame(Time = c(rep("T0",4), rep("T1",4), rep("T2", 4)), Treatment = c(rep("SHAM",1),rep("GH",1),rep("GH_LD",1),rep("NF",1)))
+    y_rep <- posterior_predict(best,newdata =nd, fun = NULL , re.form=NA)
+    #boxplot(y_rep,col=rep(1:2,5))
+    y.pred <- apply(y_rep,2, quantile, probs=c(0.025, 0.25, 0.5,0.75, 0.975))
+    res <- cbind(nd, t(y.pred))
+    # y.pred.tmp <- list()
+    # y.pred.tmp[[1]] <- y.pred[,1:4] # predicted values at T0
+    # y.pred.tmp[[2]] <- y.pred[,5:8] # predicted values at T1
+    # y.pred.tmp[[3]] <- y.pred[,9:12] # predicted values at T2
+    }
+  
+  
+  if (myvar == "Flux_NNO3" || myvar == "Flux_N_total") {
+  time=3
+  nd <- data.frame(Time = c(rep("T2",4)), Treatment = c(rep("SHAM",1),rep("GH",1),rep("GH_LD",1),rep("NF",1)))
   y_rep <- posterior_predict(best,newdata =nd, fun = NULL , re.form=NA)
-  #boxplot(y_rep,col=rep(1:2,5))
   y.pred <- apply(y_rep,2, quantile, probs=c(0.025, 0.25, 0.5,0.75, 0.975))
-  y.pred.tmp <- list()
-  y.pred.tmp[[1]] <- y.pred[,1:4] # predicted values at T0
-  y.pred.tmp[[2]] <- y.pred[,5:8] # predicted values at T1
-  y.pred.tmp[[3]] <- y.pred[,9:12] # predicted values at T2
-  
-  point= TRUE # plot the data?
-  for (t in 1:3){
-    gap <- c(-.3, -.1, .1, .3)
-    mycol <- c(1, "#CD2626", "#CD262650", "lightgrey")
-    plot(NULL,xlim=c(.5,1.5),ylim=c(min(y.pred),max(y.pred)),ylab=myvar,xlab="Flux (Down/up)",xaxt="n",main=paste0("T",t-1),bty="n")
-    #axis(1, labels=rev(levels(best$data$Position)), at = 1:2)
+  res <- cbind(nd, t(y.pred))
+  # y.pred.tmp <- list()
+  # y.pred.tmp[[1]] <- y.pred[,1:4] # predicted values at T0
+  # y.pred.tmp[[2]] <- y.pred[,1:4] # predicted values at T1
+  # y.pred.tmp[[3]] <- y.pred[,1:4] # predicted values at T2
+  }
+ 
+# 
+#   plot(NULL,xlim=c(.5,nrow(res)+.5),ylim=c(min(y.pred),max(y.pred)),ylab=myvar,xlab="Flux (Down/up)",xaxt="n", bty="n",main=paste0("T",t-1))
+#   axis(1, labels=res$Time, at = 1:nrow(res))
+#   points(1:nrow(res),res[,"50%"],pch=16,col=mycol, cex=1.5)
+#   segments(1:nrow(res),res[,"25%"],1:nrow(res),res[,"75%"],lwd=3,col=mycol)
+#   segments(1:nrow(res),res[,"2.5%"],1:nrow(res),res[,"97.5%"],lwd=1,col=mycol)
+
+  for (t in time){
+    plot(NULL,xlim=c(.5,4+.5),ylim=c(min(y.pred),max(y.pred)),ylab=myvar,xlab="Flux (Down/up)",xaxt="n", bty="n",main=paste0("T",t-1))
+    #axis(1, labels=res$Time, at = 1:nrow(res))
+    points(1:4,res[1:4,"50%"],pch=16,col=mycol, cex=1.5)
+    segments(1:4,res[,"25%"],1:4,res[1:4,"75%"],lwd=3,col=mycol)
+    segments(1:4,res[,"2.5%"],1:4,res[1:4,"97.5%"],lwd=1,col=mycol)
     
-    
-    # SHAM
-    points((1)+gap[1],y.pred.tmp[[t]]["50%",1],pch=16,col=mycol[1], cex=1.5)
-    segments((1)+gap[1],y.pred.tmp[[t]]["25%",1],(1)+gap[1],y.pred.tmp[[t]]["75%",1],lwd=3,col=mycol[1])
-    segments((1)+gap[1],y.pred.tmp[[t]]["2.5%",1],(1)+gap[1],y.pred.tmp[[t]]["97.5%",1],lwd=1,col=mycol[1])
-    # if (point == TRUE){
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="SHAM" & Position=="Up")
-    #   points(rep(1,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="SHAM" & Position=="Down")
-    #   points(rep(3,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
-    # }
-    
-    # GH
-    points((1)+gap[2],y.pred.tmp[[t]]["50%",2],pch=16,col=mycol[2], cex=1.5)
-    segments((1)+gap[2],y.pred.tmp[[t]]["25%",2],(1)+gap[2],y.pred.tmp[[t]]["75%",2],lwd=3,col=mycol[2])
-    segments((1)+gap[2],y.pred.tmp[[t]]["2.5%",2],(1)+gap[2],y.pred.tmp[[t]]["97.5%",2],lwd=1,col=mycol[2])
-    # if (point == TRUE){
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="GH" & Position=="Up")
-    #   points(rep(1,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="GH" & Position=="Down")
-    #   points(rep(3,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
-    # }
-    
-    # GH_LD
-    points((1)+gap[3],y.pred.tmp[[t]]["50%",3],pch=16,col=mycol[3], cex=1.5)
-    segments((1)+gap[3],y.pred.tmp[[t]]["25%",3],(1)+gap[3],y.pred.tmp[[t]]["75%",3],lwd=3,col=mycol[3])
-    segments((1)+gap[3],y.pred.tmp[[t]]["2.5%",3],(1)+gap[3],y.pred.tmp[[t]]["97.5%",3],lwd=1,col=mycol[3])
-    # if (point == TRUE){
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="GH_LD" & Position=="Up")
-    #   points(rep(1,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="GH_LD" & Position=="Down")
-    #   points(rep(3,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
-    # }
-    
-    # NF
-    points((1)+gap[4],y.pred.tmp[[t]]["50%",4],pch=16,col=mycol[4], cex=1.5)
-    segments((1)+gap[4],y.pred.tmp[[t]]["25%",4],(1)+gap[4],y.pred.tmp[[t]]["75%",4],lwd=3,col=mycol[4])
-    segments((1)+gap[4],y.pred.tmp[[t]]["2.5%",4],(1)+gap[4],y.pred.tmp[[t]]["97.5%",4],lwd=1,col=mycol[4])
-    # if (point == TRUE){
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="NF" & Position=="Up")
-    #   points(rep(1,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
-    #   tmp <- subset(best$data, Time==paste0("T",t-1) & Treatment =="NF" & Position=="Down")
-    #   points(rep(3,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
-    # }
-    
-    legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n")
-  } #end loop t 
-  
+    ## add data points
+    j=0
+    for (treatment in c("SHAM" , "GH" ,   "GH_LD", "NF")){
+      j=j+1
+    tmp <- best$y[which(best$data$Time==paste0("T",t-1) & best$data$Treatment ==treatment)]
+    points(rep(j,5), tmp, col=mycol[j], pch=3)
+    }
+  } # end loop t
+    #legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n")
+
 } # end loop myvar
 dev.off()
+
+
+
+
 
 
 
@@ -1747,7 +1752,7 @@ pdf(paste0("results/IMS2016_Filamentous.pdf"),width=8, height = 8)
 par(mfrow=c(2,1))
 #par(mar=c(3.5, 4.5, 4.5, 1.5))
   
-  myvar <- Fila
+  myvar <- "Fila"
   
   ## LOAD MODEL
   best = loo = mcmc = NULL
@@ -1767,36 +1772,36 @@ par(mfrow=c(2,1))
   TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
   TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
   # Difference between treatments
-  GHvsGHLD <- TreatmentGH - TreatmentGHLD;
-  GHvsNF <- TreatmentGH - TreatmentNF; 
-  GHLDvsNF <- TreatmentGHLD - TreatmentNF;
+  GHvsGHLD <- TreatmentGHLD - TreatmentGH;
+  # GHvsNF <- TreatmentGH - TreatmentNF; 
+  # GHLDvsNF <- TreatmentGHLD - TreatmentNF;
   
   # posterior distributions
   deltas <- cbind(GH = as.vector(TreatmentGH)
                   ,GHLD = as.vector(TreatmentGHLD)
                   ,NF = as.vector(TreatmentNF)
                   ,GHvsGHLD = as.vector(GHvsGHLD)
-                  ,GHvsNF = as.vector(GHvsNF)
-                  ,GHLDvsNF = as.vector(GHLDvsNF)
+                  #,GHvsNF = as.vector(GHvsNF)
+                  #,GHLDvsNF = as.vector(GHLDvsNF)
   )
   
-  res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-  p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
+  q <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
+  p <- round(apply(deltas, 2, function(x) gf(x)),3)
+  res <- t(rbind(q,p))
   
   # PLOT
-  plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-  axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
+  plot(NULL, xlim=c(0.5,nrow(res)+.5),ylim=c(min(res[,1:5]), max(res[,1:5])+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+  axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD"), at = 1:nrow(res),cex=.7)
   abline(h=0,lty=2)
-  points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-  segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
-  segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
-  for (i in 1:ncol(deltas)){
-    y=max(res[,i])+.15
-    text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
+  points(1:nrow(res),res[1:nrow(res),"50%"], pch=16,cex=1.5)
+  segments(1:nrow(res),res[1:nrow(res),"2.5%"],1:nrow(res),res[1:nrow(res),"97.5%"])
+  segments(1:nrow(res),res[1:nrow(res),"25%"],1:nrow(res),res[1:nrow(res),"75%"],lwd=3)
+  for (i in 1:nrow(res)){
+    y=max(res[i,1:5])+.05
+    text(i,y,  paste0(res[i,"50%"]," [",res[i,"2.5%"],";",res[i,"97.5%"],"]; P = ",res[i,"p"]),cex=0.75)
     #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
     #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
   } # end loop i
-  # } # end if  
   
   
   
@@ -1828,7 +1833,7 @@ par(mfrow=c(2,1))
     segments((1:6)+gap[t],y.pred.tmp[[t]]["2.5%",1:6],(1:6)+gap[t],y.pred.tmp[[t]]["97.5%",1:6],lwd=1,col=mycol[t])
   #  points(as.numeric(as.factor(best$data$Position))+ gap[as.numeric(as.factor(best$data$Treatment))], best$y, col= mycol[as.numeric(as.factor(best$data$Treatment))], pch=3)
   } #end loop t 
-    legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n")
+    #legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n")
 dev.off()
 
 
@@ -1836,210 +1841,222 @@ dev.off()
 
 
 
-pdf(paste0("results/IMS2016_Others.pdf"),width=8, height = 8)
-layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
-#par(mfrow=c(1,1))
-#par(mar=c(3.5, 4.5, 4.5, 1.5))
-point= FALSE # plot the data?
-model.name <- c("K_CM", "K_FM","Cyanobacteria","Green_algae","Diatoms","All_Chloro", "Nb_Chironomidae")
-for (myvar in model.name) {
-  
-  ## LOAD MODEL
-  best = loo = mcmc = NULL
-  load(paste0("results/IMS2016_",myvar,".Rdata"))
-  #best <- get(myvar)
-  mcmc <- as.array(best$stanfit)
-  
-  # ## POSTERIOR CHECK
-  # y <- best$y
-  # yrep <- posterior_predict(best)
-  # group <- best$data$Treatment
-  
-  
-  SHAM <- mcmc[,1:CORES,"(Intercept)"]
-  TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
-  TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
-  TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
-  # Difference between treatments
-  GHvsGHLD <- TreatmentGH - TreatmentGHLD;
-  GHvsNF <- TreatmentGH - TreatmentNF; 
-  GHLDvsNF <- TreatmentGHLD - TreatmentNF;
-  
-  if( paste0(best$formula)[3] == "Treatment * Time + Position_Bis + (1 | Block/Section)"){
-    TreatmentGH2 <- mcmc[,1:CORES,"TreatmentGH:TimeT2"]
-    TreatmentGHLD2 <- mcmc[,1:CORES,"TreatmentGH_LD:TimeT2"]
-    TreatmentNF2 <- (mcmc[,1:CORES,"TreatmentNF:TimeT2"])
-    # Difference between treatments
-    GHvsGHLD2 <- TreatmentGH2 - TreatmentGHLD2;
-    GHvsNF2 <- TreatmentGH2 - TreatmentNF2; 
-    GHLDvsNF2 <- TreatmentGHLD2 - TreatmentNF2;
-    # posterior distributions
-    deltas <- cbind(
-      GH = as.vector(TreatmentGH)
-      ,GHLD = as.vector(TreatmentGHLD)
-      ,NF = as.vector(TreatmentNF)
-      ,GHvsGHLD = as.vector(GHvsGHLD)
-      ,GHvsNF = as.vector(GHvsNF)
-      ,GHLDvsNF = as.vector(GHLDvsNF)
-      # ,GH2 = as.vector(TreatmentGH2)
-      # ,GHLD2 = as.vector(TreatmentGHLD2)
-      # ,NF2 = as.vector(TreatmentNF2)
-      # ,GHvsGHLD2 = as.vector(GHvsGHLD2)
-      # ,GHvsNF2 = as.vector(GHvsNF2)
-      # ,GHLDvsNF2 = as.vector(GHLDvsNF2)
-    )
-    res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-    p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-    
-    deltas2 <- cbind(
-      GH2 = as.vector(TreatmentGH2)
-      ,GHLD2 = as.vector(TreatmentGHLD2)
-      ,NF2 = as.vector(TreatmentNF2)
-      ,GHvsGHLD2 = as.vector(GHvsGHLD2)
-      ,GHvsNF2 = as.vector(GHvsNF2)
-      ,GHLDvsNF2 = as.vector(GHLDvsNF2)
-    )
-    res2 <- round(apply(deltas2, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-    p2 <- round(apply(deltas2, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-    
-
-    # PLOT
-    gap <- c(-.05, .05)
-    ylim = c(min(res, res2), max(res, res2)+.2)
-    plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=ylim,xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-    axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
-    abline(h=0,lty=2)
-    points((1:ncol(deltas))+gap[1],res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-    segments((1:ncol(deltas))+gap[1],res["2.5%",1:ncol(deltas)],(1:ncol(deltas))+gap[1],res["97.5%",1:ncol(deltas)])
-    segments((1:ncol(deltas))+gap[1],res["25%",1:ncol(deltas)],(1:ncol(deltas))+gap[1],res["75%",1:ncol(deltas)],lwd=3)
-    for (i in 1:ncol(deltas)){
-      y=max(res[,i])+.15
-      text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
-      #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
-      #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
-    } # end loop i
-    
-
-    points((1:ncol(deltas2))+gap[2],res2["50%",1:ncol(deltas2)], pch=16,cex=1.5,col="#CD2626")
-    segments((1:ncol(deltas2))+gap[2],res2["2.5%",1:ncol(deltas2)],(1:ncol(deltas2))+gap[2],res2["97.5%",1:ncol(deltas2)],col="#CD2626")
-    segments((1:ncol(deltas2))+gap[2],res2["25%",1:ncol(deltas2)],(1:ncol(deltas2))+gap[2],res2["75%",1:ncol(deltas2)],lwd=3,col="#CD2626")
-    for (i in 1:ncol(deltas2)){
-      y=max(res[,i])+.15
-      text(i,y+.05,  paste0(res2["50%",i]," [",res2["2.5%",i],";",res2["97.5%",i],"]; P>0 = ",p2[i]),cex=0.5, col="#CD2626")
-      #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
-      #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
-    } # end loop i
-    legend("topright",legend=c("T1", "T2"),col=c(1,"#CD2626"),pch=rep(16,2),bty="n",cex=.75)
-    
-  } else {
-    deltas <- cbind(
-      GH = as.vector(TreatmentGH)
-      ,GHLD = as.vector(TreatmentGHLD)
-      ,NF = as.vector(TreatmentNF)
-      ,GHvsGHLD = as.vector(GHvsGHLD)
-      ,GHvsNF = as.vector(GHvsNF)
-      ,GHLDvsNF = as.vector(GHLDvsNF)
-    )
-
-    
-    res <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),3) # quantiles
-    p <- round(apply(deltas, 2, function(x) mean(x>0)),3) # P: confidence that the parameter is positive (P>0)
-    
-    # PLOT
-    plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
-    axis(1, labels=c("GH", "GHLD", "NF", "GH-GHLD", "GH-NF","GHLD-NF"), at = 1:ncol(deltas),cex=.7)
-    abline(h=0,lty=2)
-    points(1:ncol(deltas),res["50%",1:ncol(deltas)], pch=16,cex=1.5)
-    segments(1:ncol(deltas),res["2.5%",1:ncol(deltas)],1:ncol(deltas),res["97.5%",1:ncol(deltas)])
-    segments(1:ncol(deltas),res["25%",1:ncol(deltas)],1:ncol(deltas),res["75%",1:ncol(deltas)],lwd=3)
-    for (i in 1:ncol(deltas)){
-      y=max(res[,i])+.15
-      text(i,y-.05,  paste0(res["50%",i]," [",res["2.5%",i],";",res["97.5%",i],"]; P>0 = ",p[i]),cex=0.5)
-      #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
-      #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
-    } # end loop i
-  
-  } # end else
-  
-
-
-
-  # Precictive values
-  nd <- data.frame(Time = c(rep("T1",12), rep("T2", 12)), Treatment = c(rep("SHAM",3),rep("GH",3),rep("GH_LD",3),rep("NF",3)), Position_Bis = rep(rev(levels(best$data$Position_Bis)),8))#,Channel = rep(c(rep("A",5),rep("B",5)),2))
-  y_rep <- posterior_predict(best,newdata =nd, fun = NULL , re.form=NA)
-  #boxplot(y_rep,col=rep(1:2,5))
-  y.pred <- apply(y_rep,2, quantile, probs=c(0.025, 0.25, 0.5,0.75, 0.975))
-  y.pred.tmp <- list()
-  y.pred.tmp[[1]] <- y.pred[,1:12] # predicted values at T1
-  y.pred.tmp[[2]] <- y.pred[,13:24] # predicted values at T2
-  
-
-  for (t in 1:2){
-  gap <- c(-.3, -.1, .1, .3)
-  mycol <- c(1, "#CD2626", "#CD262650", "lightgrey")
-  plot(NULL,xlim=c(.5,3.5),ylim=c(min(y.pred),max(y.pred)),ylab=myvar,xlab="",xaxt="n",main=paste0("T",t),bty="n")
-  axis(1, labels=rev(levels(best$data$Position_Bis)), at = 1:3)
-  
-
-  # SHAM
-  points((1:3)+gap[1],y.pred.tmp[[t]]["50%",1:3],pch=16,col=mycol[1], cex=1.5)
-  segments((1:3)+gap[1],y.pred.tmp[[t]]["25%",1:3],(1:3)+gap[1],y.pred.tmp[[t]]["75%",1:3],lwd=3,col=mycol[1])
-  segments((1:3)+gap[1],y.pred.tmp[[t]]["2.5%",1:3],(1:3)+gap[1],y.pred.tmp[[t]]["97.5%",1:3],lwd=1,col=mycol[1])
-  if (point == TRUE){
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Upstream")
-  points(rep(1,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Middle")
-  points(rep(2,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Downstream")
-  points(rep(3,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
-  }
-  
-  # GH
-  points((1:3)+gap[2],y.pred.tmp[[t]]["50%",4:6],pch=16,col=mycol[2], cex=1.5)
-  segments((1:3)+gap[2],y.pred.tmp[[t]]["25%",4:6],(1:3)+gap[2],y.pred.tmp[[t]]["75%",4:6],lwd=3,col=mycol[2])
-  segments((1:3)+gap[2],y.pred.tmp[[t]]["2.5%",4:6],(1:3)+gap[2],y.pred.tmp[[t]]["97.5%",4:6],lwd=1,col=mycol[2])
-  if (point == TRUE){
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Upstream")
-  points(rep(1,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Middle")
-  points(rep(2,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
-  tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Downstream")
-  points(rep(3,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
-  }
-  
-  # GH_LD
-  points((1:3)+gap[3],y.pred.tmp[[t]]["50%",7:9],pch=16,col=mycol[3], cex=1.5)
-  segments((1:3)+gap[3],y.pred.tmp[[t]]["25%",7:9],(1:3)+gap[3],y.pred.tmp[[t]]["75%",7:9],lwd=3,col=mycol[3])
-  segments((1:3)+gap[3],y.pred.tmp[[t]]["2.5%",7:9],(1:3)+gap[3],y.pred.tmp[[t]]["97.5%",7:9],lwd=1,col=mycol[3])
-  if (point == TRUE){
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Upstream")
-    points(rep(1,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Middle")
-    points(rep(2,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Downstream")
-    points(rep(3,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
-  }
-  
-  # NF
-  points((1:3)+gap[4],y.pred.tmp[[t]]["50%",10:12],pch=16,col=mycol[4], cex=1.5)
-  segments((1:3)+gap[4],y.pred.tmp[[t]]["25%",10:12],(1:3)+gap[4],y.pred.tmp[[t]]["75%",10:12],lwd=3,col=mycol[4])
-  segments((1:3)+gap[4],y.pred.tmp[[t]]["2.5%",10:12],(1:3)+gap[4],y.pred.tmp[[t]]["97.5%",10:12],lwd=1,col=mycol[4])
-  if (point == TRUE){
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Upstream")
-    points(rep(1,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Middle")
-    points(rep(2,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
-    tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Downstream")
-    points(rep(3,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
-  }
-  
-  legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n", cex=.75)
-  } #end loop t 
-  
-
-
-} # end loop
-dev.off()
+# pdf(paste0("results/IMS2016_Others.pdf"),width=8, height = 8)
+# #layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
+# par(mfrow=c(1,1))
+# #par(mar=c(3.5, 4.5, 4.5, 1.5))
+# point= FALSE # plot the data?
+# model.name <- c("K_CM", "K_FM","Cyanobacteria","Green_algae","Diatoms","All_Chloro", "Nb_Chironomidae")
+# for (myvar in model.name) {
+#   
+#   ## LOAD MODEL
+#   best = loo = mcmc = NULL
+#   load(paste0("results/IMS2016_",myvar,".Rdata"))
+#   #best <- get(myvar)
+#   mcmc <- as.array(best$stanfit)
+#   
+#   # ## POSTERIOR CHECK
+#   # y <- best$y
+#   # yrep <- posterior_predict(best)
+#   # group <- best$data$Treatment
+#   
+#   
+#   SHAM <- mcmc[,1:CORES,"(Intercept)"]
+#   TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
+#   TreatmentGHLD <- mcmc[,1:CORES,"TreatmentGH_LD"]
+#   TreatmentNF <- (mcmc[,1:CORES,"TreatmentNF"])
+#   # Difference between treatments
+#   #GHvsGHLD <- TreatmentGHLD - TreatmentGH;
+#   #GHvsNF <- TreatmentGH - TreatmentNF; 
+#   #GHLDvsNF <- TreatmentGHLD - TreatmentNF;
+#   
+#   deltas <- cbind(
+#     GH = as.vector(TreatmentGH)
+#     ,GHLD = as.vector(TreatmentGHLD)
+#     ,NF = as.vector(TreatmentNF)
+#     #,GHvsGHLD = as.vector(GHvsGHLD)
+#     #,GHvsNF = as.vector(GHvsNF)
+#     #,GHLDvsNF = as.vector(GHLDvsNF)
+#   )
+#   
+#   
+#   q <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),2) # quantiles
+#   p <- round(apply(deltas, 2, function(x) gf(x)),2)
+#   res <- t(rbind(q,p))
+#   
+#   
+#   if( paste0(best$formula)[3] == "Treatment * Time + Position_Bis + (1 | Block/Section)"){
+#     TreatmentGH2 <- TreatmentGH + mcmc[,1:CORES,"TreatmentGH:TimeT2"]
+#     TreatmentGHLD2 <- TreatmentGHLD + mcmc[,1:CORES,"TreatmentGH_LD:TimeT2"]
+#     TreatmentNF2 <- TreatmentNF + (mcmc[,1:CORES,"TreatmentNF:TimeT2"])
+#     # Difference between treatments
+#     #GHvsGHLD2 <- TreatmentGHLD2 - TreatmentGH2;
+#     #GHvsNF2 <- TreatmentGH2 - TreatmentNF2; 
+#     #GHLDvsNF2 <- TreatmentGHLD2 - TreatmentNF2;
+#     # posterior distributions
+#     # deltas <- cbind(
+#     #   GH = as.vector(TreatmentGH)
+#     #   ,GHLD = as.vector(TreatmentGHLD)
+#     #   ,NF = as.vector(TreatmentNF)
+#       #,GHvsGHLD = as.vector(GHvsGHLD)
+#       #,GHvsNF = as.vector(GHvsNF)
+#       #,GHLDvsNF = as.vector(GHLDvsNF)
+#       # ,GH2 = as.vector(TreatmentGH2)
+#       # ,GHLD2 = as.vector(TreatmentGHLD2)
+#       # ,NF2 = as.vector(TreatmentNF2)
+#       # ,GHvsGHLD2 = as.vector(GHvsGHLD2)
+#       # ,GHvsNF2 = as.vector(GHvsNF2)
+#       # ,GHLDvsNF2 = as.vector(GHLDvsNF2)
+#     #)
+#     # q <- round(apply(deltas, 2, quantile , probs=c(.025, .25, .5, .75, .975)),2) # quantiles
+#     # p <- round(apply(deltas, 2, function(x) gf(x)),2)
+#     # res <- t(rbind(q,p))
+#     
+#     
+#     deltas2 <- cbind(
+#       GH2 = as.vector(TreatmentGH2)
+#       ,GHLD2 = as.vector(TreatmentGHLD2)
+#       ,NF2 = as.vector(TreatmentNF2)
+#       #,GHvsGHLD2 = as.vector(GHvsGHLD2)
+#       #,GHvsNF2 = as.vector(GHvsNF2)
+#       #,GHLDvsNF2 = as.vector(GHLDvsNF2)
+#     )
+#     q2 <- round(apply(deltas2, 2, quantile , probs=c(.025, .25, .5, .75, .975)),2) # quantiles
+#     p2 <- round(apply(deltas2, 2, function(x) gf(x)),2)
+#     res2 <- t(rbind(q2,p2))
+#     
+#     
+# 
+#     # PLOT
+#     gap <- c(-.05, .05)
+#     ylim = c(min(res[,1:5], res2[,1:5]), max(res[,1:5], res2[,1:5])+.05)
+#     plot(NULL, xlim=c(0.5,3.5),ylim=ylim,xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+#     axis(1, labels=c("GH", "GHLD", "NF"), at = 1:3,cex=.7)
+#     abline(h=0,lty=2)
+#     points((1:nrow(res))+gap[1],res[1:nrow(res),"50%"], pch=16,cex=1.5)
+#     segments((1:nrow(res))+gap[1],res[1:nrow(res),"2.5%"],(1:nrow(res))+gap[1],res[1:nrow(res),"97.5%"])
+#     segments((1:nrow(res))+gap[1],res[1:nrow(res),"25%"],(1:nrow(res))+gap[1],res[1:nrow(res),"75%"],lwd=3)
+#     for (i in 1:nrow(res)){
+#       y=max(res[i,1:5])+.05
+#       text(i,y-.05,  paste0(res[i,"50%"]," [",res[i,"2.5%"],";",res[i,"97.5%"],"]; P = ",p[i]),cex=0.75)
+#       #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
+#       #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
+#     } # end loop i
+# 
+#     points((1:nrow(res2))+gap[2],res2[1:nrow(res2),"50%"], pch=16,cex=1.5)
+#     segments((1:nrow(res2))+gap[2],res2[1:nrow(res2),"2.5%"],(1:nrow(res2))+gap[2],res2[1:nrow(res2),"97.5%"])
+#     segments((1:nrow(res2))+gap[2],res2[1:nrow(res2),"25%"],(1:nrow(res2))+gap[2],res2[1:nrow(res2),"75%"],lwd=3)
+#     for (i in 1:nrow(res)){
+#       y=max(res2[i,1:5])+.05
+#       text(i,y-.05,  paste0(res2[i,"50%"]," [",res2[i,"2.5%"],";",res2[i,"97.5%"],"]; P = ",p2[i]),cex=0.75)
+#       #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
+#       #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
+#     } # end loop i
+#     
+#     
+#     
+#     #legend("topright",legend=c("T1", "T2"),col=c(1,"#CD2626"),pch=rep(16,2),bty="n",cex=.75)
+#     
+#   } else {
+#     
+#     
+#     
+#     # # PLOT
+#     # plot(NULL, xlim=c(0.5,ncol(deltas)+.5),ylim=c(min(res), max(res)+.2),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+#     plot(NULL, xlim=c(0.5,3.5),ylim=c(min(res[,1:5]), max(res[,1:5])+0.05),xaxt="n",ylab=expression(Beta ~ ": treatment effects"), xlab='',main= myvar,bty="n", xaxt="n")
+#     axis(1, labels=c("GH", "GHLD", "NF"), at = 1:3,cex=.7)
+#     abline(h=0,lty=2)
+#     points((1:nrow(res))+gap[1],res[1:nrow(res),"50%"], pch=16,cex=1.5)
+#     segments((1:nrow(res))+gap[1],res[1:nrow(res),"2.5%"],(1:nrow(res))+gap[1],res[1:nrow(res),"97.5%"])
+#     segments((1:nrow(res))+gap[1],res[1:nrow(res),"25%"],(1:nrow(res))+gap[1],res[1:nrow(res),"75%"],lwd=3)
+#     for (i in 1:nrow(res)){
+#       y=max(res[i,1:5])+.05
+#       text(i,y-.05,  paste0(res[i,"50%"]," [",res[i,"2.5%"],";",res[i,"97.5%"],"]; P = ",p[i]),cex=0.75)
+#       #text(i,y-.1,"P: confidence that the parameter is positive (P>0) or negative (P<0)",cex=.4)
+#       #text(i,y-.15,"(i.e., do not overlap with 0)",cex=.4)
+#     } # end loop i
+#   
+#   } # end else
+#   
+# 
+# 
+# 
+#   # # Precictive values
+#   # nd <- data.frame(Time = c(rep("T1",12), rep("T2", 12)), Treatment = c(rep("SHAM",3),rep("GH",3),rep("GH_LD",3),rep("NF",3)), Position_Bis = rep(rev(levels(best$data$Position_Bis)),8))#,Channel = rep(c(rep("A",5),rep("B",5)),2))
+#   # y_rep <- posterior_predict(best,newdata =nd, fun = NULL , re.form=NA)
+#   # #boxplot(y_rep,col=rep(1:2,5))
+#   # y.pred <- apply(y_rep,2, quantile, probs=c(0.025, 0.25, 0.5,0.75, 0.975))
+#   # y.pred.tmp <- list()
+#   # y.pred.tmp[[1]] <- y.pred[,1:12] # predicted values at T1
+#   # y.pred.tmp[[2]] <- y.pred[,13:24] # predicted values at T2
+#   # 
+#   # 
+#   # for (t in 1:2){
+#   # gap <- c(-.3, -.1, .1, .3)
+#   # mycol <- c("#6B6B6B", "#009ACD", "#5CACEE", "lightgrey")
+#   # plot(NULL,xlim=c(.5,3.5),ylim=c(min(y.pred),max(y.pred)),ylab=myvar,xlab="",xaxt="n",main=paste0("T",t),bty="n")
+#   # axis(1, labels=rev(levels(best$data$Position_Bis)), at = 1:3)
+#   # 
+#   # 
+#   # # SHAM
+#   # points((1:3)+gap[1],y.pred.tmp[[t]]["50%",1:3],pch=16,col=mycol[1], cex=1.5)
+#   # segments((1:3)+gap[1],y.pred.tmp[[t]]["25%",1:3],(1:3)+gap[1],y.pred.tmp[[t]]["75%",1:3],lwd=3,col=mycol[1])
+#   # segments((1:3)+gap[1],y.pred.tmp[[t]]["2.5%",1:3],(1:3)+gap[1],y.pred.tmp[[t]]["97.5%",1:3],lwd=1,col=mycol[1])
+#   # if (point == TRUE){
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Upstream")
+#   # points(rep(1,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Middle")
+#   # points(rep(2,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="SHAM" & Position_Bis=="Downstream")
+#   # points(rep(3,5)+gap[1], get(paste0("tmp$",myvar)), col=mycol[1], pch=3)
+#   # }
+#   # 
+#   # # GH
+#   # points((1:3)+gap[2],y.pred.tmp[[t]]["50%",4:6],pch=16,col=mycol[2], cex=1.5)
+#   # segments((1:3)+gap[2],y.pred.tmp[[t]]["25%",4:6],(1:3)+gap[2],y.pred.tmp[[t]]["75%",4:6],lwd=3,col=mycol[2])
+#   # segments((1:3)+gap[2],y.pred.tmp[[t]]["2.5%",4:6],(1:3)+gap[2],y.pred.tmp[[t]]["97.5%",4:6],lwd=1,col=mycol[2])
+#   # if (point == TRUE){
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Upstream")
+#   # points(rep(1,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Middle")
+#   # points(rep(2,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
+#   # tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH" & Position_Bis=="Downstream")
+#   # points(rep(3,5)+gap[2], get(paste0("tmp$",myvar)), col=mycol[2], pch=3)
+#   # }
+#   # 
+#   # # GH_LD
+#   # points((1:3)+gap[3],y.pred.tmp[[t]]["50%",7:9],pch=16,col=mycol[3], cex=1.5)
+#   # segments((1:3)+gap[3],y.pred.tmp[[t]]["25%",7:9],(1:3)+gap[3],y.pred.tmp[[t]]["75%",7:9],lwd=3,col=mycol[3])
+#   # segments((1:3)+gap[3],y.pred.tmp[[t]]["2.5%",7:9],(1:3)+gap[3],y.pred.tmp[[t]]["97.5%",7:9],lwd=1,col=mycol[3])
+#   # if (point == TRUE){
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Upstream")
+#   #   points(rep(1,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Middle")
+#   #   points(rep(2,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="GH_LD" & Position_Bis=="Downstream")
+#   #   points(rep(3,5)+gap[3], get(paste0("tmp$",myvar)), col=mycol[3], pch=3)
+#   # }
+#   # 
+#   # # NF
+#   # points((1:3)+gap[4],y.pred.tmp[[t]]["50%",10:12],pch=16,col=mycol[4], cex=1.5)
+#   # segments((1:3)+gap[4],y.pred.tmp[[t]]["25%",10:12],(1:3)+gap[4],y.pred.tmp[[t]]["75%",10:12],lwd=3,col=mycol[4])
+#   # segments((1:3)+gap[4],y.pred.tmp[[t]]["2.5%",10:12],(1:3)+gap[4],y.pred.tmp[[t]]["97.5%",10:12],lwd=1,col=mycol[4])
+#   # if (point == TRUE){
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Upstream")
+#   #   points(rep(1,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Middle")
+#   #   points(rep(2,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
+#   #   tmp <- subset(best$data, Time==paste0("T",t) & Treatment =="NF" & Position_Bis=="Downstream")
+#   #   points(rep(3,5)+gap[4], get(paste0("tmp$",myvar)), col=mycol[4], pch=3)
+#   # }
+#   # 
+#   # legend("topright",legend=c("SHAM", "GH", "GH_LD", "NF"),col=mycol,pch=rep(16,4),bty="n", cex=.75)
+#   # } #end loop t 
+#   
+# 
+# 
+# } # end loop
+# dev.off()
 
 
 

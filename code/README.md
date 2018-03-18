@@ -1,4 +1,9 @@
-MODELS ORDER
+This folder contains 2 R scripts to run analysis:
+- PHENOTYPES
+- COMMUNITY AND ECOSYSTEMS
+
+R packages required: rstanarm, loo
+
 
 ## PHENOTYPES
 

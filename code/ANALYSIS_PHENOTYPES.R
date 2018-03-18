@@ -13,7 +13,7 @@ library("rstanarm")
 #rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 library(loo)
-library(bayesplot)
+#library(bayesplot)
 
 ### FUNCTIONS ###
 invlogit<-function(x) {1/(1+exp(-(x)))} # inverse logit
@@ -30,8 +30,6 @@ CORES = CHAINS # number of core
 ITER = 10000 # number of iterations
 WARM = 2000 # warmup
 ndelta = 0.99
-
-
 
 
 

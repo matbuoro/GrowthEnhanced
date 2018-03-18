@@ -24,7 +24,12 @@ gf <- function(x){if(median(x)>=0){mean(x<=0)}else{mean(x>0)}} # function to cal
 setwd("~/Documents/RESEARCH/PROJECTS/SALMOINVADE/GrowthEnhancement")
 #setwd("~/Documents/mbuoro/Ims/")
 
-
+### ANALYSIS ###
+CHAINS  = 3 # number of chains
+CORES = CHAINS # number of core
+ITER = 10000 # number of iterations
+WARM = 2000 # warmup
+ndelta = 0.99
 
 ### DATA ###
 ## First, Choose experiment's dataset
@@ -37,14 +42,6 @@ data.name <- "With_Fish" # Exp_1_Community_Ecosystem_With_Fish_Experimental_Stre
 df <- read_csv(paste0("data/Exp_1_Community_Ecosystem_",data.name,"_Experimental_Streams.csv"))
 df$Treatment <- as.factor(df$Treatment)
 df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
-
-
-### ANALYSIS ###
-CHAINS  = 3 # number of chains
-CORES = CHAINS # number of core
-ITER = 10000 # number of iterations
-WARM = 2000 # warmup
-ndelta = 0.99
 
 
 # 1. Rhyacophilidae

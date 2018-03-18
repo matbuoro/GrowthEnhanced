@@ -39,11 +39,11 @@ ndelta = 0.99
 # Response variables: Body_Mass and Growth_Rate_SGRW
 
 ## Load dataset
-data_pheno_indoor <- read_csv("data/Exp_1_Mass_Growth_Hatchery_Conditions.csv")
-data_pheno_indoor <- as.data.frame(data_pheno_indoor)
-data_pheno_indoor$Treatment <- as.factor(data_pheno_indoor$Treatment)
-#levels(data_pheno_indoor$Treatment)[levels(data_pheno_indoor$Treatment)=="sham"] <- "SHAM"
-data_pheno_indoor <- within(data_pheno_indoor, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- read_csv("data/Exp_1_Mass_Growth_Hatchery_Conditions.csv")
+df <- as.data.frame(df)
+df$Treatment <- as.factor(df$Treatment)
+#levels(df$Treatment)[levels(df$Treatment)=="sham"] <- "SHAM"
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 
 
@@ -53,7 +53,7 @@ data_pheno_indoor <- within(data_pheno_indoor, Treatment <- relevel(Treatment, r
 fit_mass_indoor <- stan_glmer(
   Final_Mass ~ Treatment  + (1| Tank_ID),
   na.action = "na.omit",
-  data = data_pheno_indoor,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -62,15 +62,15 @@ fit_mass_indoor <- stan_glmer(
 )
 
 ## Results
-if (any(summary(fit_mass_indoor)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
+best <- fit_mass_indoor
+if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
   model.name = "Exp_1_Mass_Hatchery_Conditions"
   ### SAVE
-  best <- fit_mass_indoor
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 ## Posterior for GH treatment
-mcmc <- as.array(fit_mass_indoor$stanfit)
+mcmc <- as.array(best$stanfit)
 TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
 cat(
   round(quantile(TreatmentGH , probs=c(.5), na.rm=TRUE),2)
@@ -86,7 +86,7 @@ cat(
 fit_growth_indoor <- stan_glmer(
   Growth_Rate_SGRW ~ Treatment  + (1| Tank_ID  ),
   na.action = "na.omit",
-  data = data_pheno_indoor,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -95,16 +95,16 @@ fit_growth_indoor <- stan_glmer(
 )
 
 ## RESULTS
-if (any(summary(fit_growth_indoor)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
+best <- fit_growth_indoor
+if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
   model.name = "Exp_1_Growth_Hatchery_Conditions"
   ### SAVE
-  best <- fit_growth_indoor
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 
 ## Posterior for GH treatment
-mcmc <- as.array(fit_growth_indoor$stanfit)
+mcmc <- as.array(best$stanfit)
 TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
 cat(
   round(quantile(TreatmentGH , probs=c(.5), na.rm=TRUE),2)
@@ -122,14 +122,14 @@ cat(
 # Response variables: Body_Mass, Growth_Rate_SGRW_Before_Release and Growth_Rate_SGRW_After_Release
 
 # Load dataset
-data_pheno_outdoor <- read_csv("data/Exp_1_Mass_Growth_Experimental_Streams.csv")
-data_pheno_outdoor <- as.data.frame(data_pheno_outdoor)
-data_pheno_outdoor$Treatment <- as.factor(data_pheno_outdoor$Treatment)
-data_pheno_outdoor <- subset(data_pheno_outdoor, Treatment != "no tag") # Remove unidentified fish
-#levels(data_pheno_outdoor$Treatment)[levels(data_pheno_outdoor$Treatment)=="Sham"] <- "SHAM"
-data_pheno_outdoor <- droplevels(data_pheno_outdoor)
-data_pheno_outdoor <- within(data_pheno_outdoor, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
-data_pheno_outdoor <- subset(data_pheno_outdoor, Status == "Recaptured") # keep recaptured fish only
+df <- read_csv("data/Exp_1_Mass_Growth_Experimental_Streams.csv")
+df <- as.data.frame(df)
+df$Treatment <- as.factor(df$Treatment)
+df <- subset(df, Treatment != "no tag") # Remove unidentified fish
+#levels(df$Treatment)[levels(df$Treatment)=="Sham"] <- "SHAM"
+df <- droplevels(df)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- subset(df, Status == "Recaptured") # keep recaptured fish only
 
 
 
@@ -139,7 +139,7 @@ data_pheno_outdoor <- subset(data_pheno_outdoor, Status == "Recaptured") # keep 
 fit_mass_outdoor <- stan_glmer(
   Body_Mass ~ Treatment  + (1| Channel/Section),
   na.action = "na.omit",
-  data = data_pheno_outdoor,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -149,15 +149,15 @@ fit_mass_outdoor <- stan_glmer(
 
 
 ## Results
-if (any(summary(fit_mass_outdoor)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
+best <- fit_mass_outdoor
+if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
   model.name = "Exp_1_Mass_Experimental_Streams"
   ### SAVE
-  best <- fit_mass_outdoor
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 ## Posterior for GH treatment
-mcmc <- as.array(fit_mass_outdoor$stanfit)
+mcmc <- as.array(best$stanfit)
 TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
 cat(
   round(quantile(TreatmentGH , probs=c(.5), na.rm=TRUE),2)
@@ -174,7 +174,7 @@ cat(
 Growth_Rate_SGRW_Before_Release <- stan_glmer(
   Growth_Rate_SGRW_Before_Release ~ Treatment  + (1| Channel/Section),
   na.action = "na.omit",
-  data = data_pheno_outdoor,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -184,15 +184,15 @@ Growth_Rate_SGRW_Before_Release <- stan_glmer(
 
 
 ## Results
-if (any(summary(Growth_Rate_SGRW_Before_Release)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
+best <- Growth_Rate_SGRW_Before_Release
+if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
   model.name = "Exp_1_Growth_Experimental_Streams_BEFORE_Release"
   ### SAVE
-  best <- Growth_Rate_SGRW_Before_Release
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 ## Posterior for GH treatment
-mcmc <- as.array(Growth_Rate_SGRW_Before_Release$stanfit)
+mcmc <- as.array(best$stanfit)
 TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
 cat(
   round(quantile(TreatmentGH , probs=c(.5), na.rm=TRUE),2)
@@ -209,7 +209,7 @@ cat(
 Growth_Rate_SGRW_After_Release <- stan_glmer(
   Growth_Rate_SGRW_After_Release ~ Treatment  + (1| Channel/Section),
   na.action = "na.omit",
-  data = data_pheno_outdoor,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -219,15 +219,15 @@ Growth_Rate_SGRW_After_Release <- stan_glmer(
 
 
 ## Results
-if (any(summary(Growth_Rate_SGRW_After_Release)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
+best <- Growth_Rate_SGRW_After_Release
+if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE; TRUE if convergence failure
   model.name = "Exp_1_Growth_Experimental_Streams_AFTER_Release"
   ### SAVE
-  best <- Growth_Rate_SGRW_After_Release
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 ## Posterior for GH treatment
-mcmc <- as.array(Growth_Rate_SGRW_After_Release$stanfit)
+mcmc <- as.array(best$stanfit)
 TreatmentGH <- mcmc[,1:CORES,"TreatmentGH"]
 cat(
   round(quantile(TreatmentGH , probs=c(.5), na.rm=TRUE),2)
@@ -247,10 +247,10 @@ cat(
 # Response variables: WARP1 and WARP2
 
 # Load dataset
-Exp_1_Morphology_Experimental_Streams <- read_csv("data/Exp_1_Morphology_Experimental_Streams.csv")
-Exp_1_Morphology_Experimental_Streams <- as.data.frame(Exp_1_Morphology_Experimental_Streams)
-Exp_1_Morphology_Experimental_Streams$Treatment <- as.factor(Exp_1_Morphology_Experimental_Streams$Treatment)
-Exp_1_Morphology_Experimental_Streams <- within(Exp_1_Morphology_Experimental_Streams, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- read_csv("data/Exp_1_Morphology_Experimental_Streams.csv")
+df <- as.data.frame(df)
+df$Treatment <- as.factor(df$Treatment)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 
 # 1. WARP1
@@ -260,7 +260,7 @@ Exp_1_Morphology_Experimental_Streams <- within(Exp_1_Morphology_Experimental_St
 fit1 <- stan_glmer(
   WARP1 ~ Treatment * log(Body_Mass) + (1| Channel/Section), 
   na.action = "na.omit",
-  data = Exp_1_Morphology_Experimental_Streams,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -272,7 +272,7 @@ fit1 <- stan_glmer(
 fit2 <- stan_glmer(
   WARP1 ~ Treatment + log(Body_Mass) + (1| Channel/Section), 
   na.action = "na.omit",
-  data = Exp_1_Morphology_Experimental_Streams,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -376,16 +376,16 @@ cat(
 # Response variables: Activity
 
 # Load dataset
-Exp_2_Activity_Open_Field_Tests <- read_csv("data/Exp_2_Activity_Open_Field_Tests.csv")
-Exp_2_Activity_Open_Field_Tests$Treatment <- as.factor(Exp_2_Activity_Open_Field_Tests$Treatment)
-Exp_2_Activity_Open_Field_Tests <- within(Exp_2_Activity_Open_Field_Tests, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- read_csv("data/Exp_2_Activity_Open_Field_Tests.csv")
+df$Treatment <- as.factor(df$Treatment)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 
 
 ## Analysis
 fit1 <- stan_glmer(
   Activity ~ log(Body_Mass)+Treatment+Scoring_Session + (1|Fish_ID),
-  data = Exp_2_Activity_Open_Field_Tests,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -395,7 +395,7 @@ fit1 <- stan_glmer(
 
 fit2 <- stan_glmer(
   Activity ~ log(Body_Mass)*Treatment+Scoring_Session + (1|Fish_ID),
-  data = Exp_2_Activity_Open_Field_Tests,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -405,7 +405,7 @@ fit2 <- stan_glmer(
 
 fit3 <- stan_glmer(
   Activity ~ log(Body_Mass)+Treatment*Scoring_Session + (1|Fish_ID),
-  data = Exp_2_Activity_Open_Field_Tests,
+  data = df,
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
   control=list(adapt_delta=ndelta),
   QR = TRUE
@@ -413,7 +413,7 @@ fit3 <- stan_glmer(
 
 fit4 <- stan_glmer(
   Activity ~ log(Body_Mass)*Treatment*Scoring_Session + (1|Fish_ID),
-  data = Exp_2_Activity_Open_Field_Tests,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -468,15 +468,16 @@ cat(
 # Response variables: Movement and Habitat_Use
 
 # Load dataset
-Exp_2_Movement_Habitat_Use_Stream_Mesocosms <- read_csv("data/Exp_2_Movement_Habitat_Use_Stream_Mesocosms.csv")
-
+df <- read_csv("data/Exp_2_Movement_Habitat_Use_Stream_Mesocosms.csv")
+df$Treatment <- as.factor(df$Treatment)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 # 1. Movement
 
 ## Analysis
 fit1 <- stan_glmer(
   Movement ~ log(Body_mass)+Treatment+scoring + (1|ID),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -487,7 +488,7 @@ fit1 <- stan_glmer(
 
 fit2 <- stan_glmer(
   Movement ~ log(Body_mass)*Treatment+scoring + (1|ID),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -498,7 +499,7 @@ fit2 <- stan_glmer(
 
 fit3 <- stan_glmer(
   Movement ~ log(Body_mass)+Treatment*scoring + (1|ID),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -509,7 +510,7 @@ fit3 <- stan_glmer(
 
 fit4 <- stan_glmer(
   Movement ~ log(Body_mass)*Treatment*scoring + (1|ID),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -556,7 +557,7 @@ cat(round(f*100,1),"% \n")
 fit1 <- stan_glmer(
   Habitat_Use ~ Treatment+Time_of_the_day+log(Body_mass) + (1|day:ID) + (1|group),
   family = binomial(),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -568,7 +569,7 @@ fit1 <- stan_glmer(
 fit2 <- stan_glmer(
   Habitat_Use ~ Treatment*Time_of_the_day+log(Body_mass) + (1|day:ID) + (1|group),
   family = binomial(),
-  data = Exp_2_Movement_Habitat_Use_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -620,16 +621,16 @@ cat(
 # Response variables: N_Excretion and P_Excretion 
 
 # Load dataset
-Exp_3_Excretion_Hatchery_Conditions <- read_csv("data/Exp_3_Excretion_Hatchery_Conditions.csv")
-Exp_3_Excretion_Hatchery_Conditions$Treatment <- as.factor(Exp_3_Excretion_Hatchery_Conditions$Treatment)
-Exp_3_Excretion_Hatchery_Conditions <- within(Exp_3_Excretion_Hatchery_Conditions, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- read_csv("data/Exp_3_Excretion_Hatchery_Conditions.csv")
+df$Treatment <- as.factor(df$Treatment)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 
 
 # 1. P_Excretion
 P_Excretion <- stan_glmer(
   log(P_Excretion) ~ Treatment + log(Body_Mass) + (1|Tank), # with mass as covariate
-  data = Exp_3_Excretion_Hatchery_Conditions,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -662,7 +663,7 @@ cat(
 # 2. N_Excretion
 N_Excretion <- stan_glmer(
   log(N_Excretion) ~ Treatment + log(Body_Mass) + (1|Tank), # with mass as covariate
-  data = Exp_3_Excretion_Hatchery_Conditions,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -701,9 +702,9 @@ cat(
 # Response variables: N_Excretion and P_Excretion 
 
 # Load dataset
-Exp_3_Excretion_Stream_Mesocosms <- read_csv("data/Exp_3_Excretion_Stream_Mesocosms.csv")
-Exp_3_Excretion_Stream_Mesocosms$Treatment <- as.factor(Exp_3_Excretion_Stream_Mesocosms$Treatment)
-Exp_3_Excretion_Stream_Mesocosms <- within(Exp_3_Excretion_Stream_Mesocosms, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
+df <- read_csv("data/Exp_3_Excretion_Stream_Mesocosms.csv")
+df$Treatment <- as.factor(df$Treatment)
+df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 # excretion_outdoor <- within(excretion_outdoor, Treatment <- relevel(Treatment, ref = 3)) # SHAM as reference
 # excretion_outdoor <- within(excretion_outdoor, Treatment_bis <- relevel(Treatment_bis, ref = 2)) # SHAM as reference
@@ -714,7 +715,7 @@ Exp_3_Excretion_Stream_Mesocosms <- within(Exp_3_Excretion_Stream_Mesocosms, Tre
 
 P_Excretion <- stan_glmer(
   log(P_Excretion) ~ Treatment + log(Body_Mass) + (1|Block/Stream_Mesocosm), # with mass as covariate
-  data = Exp_3_Excretion_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
@@ -748,7 +749,7 @@ cat(
 # 2. N_Excretion
 N_Excretion <- stan_glmer(
   log(N_Excretion) ~ Treatment + log(Body_Mass) + (1|Block/Stream_Mesocosm), # with mass as covariate
-  data = Exp_3_Excretion_Stream_Mesocosms,
+  data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),

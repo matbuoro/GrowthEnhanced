@@ -1,7 +1,8 @@
-This folder contains R scripts to run analysis for PHENOTYPES and COMMUNITY & ECOSYSTEMS. Results have to be saved in a *results* folder. Then, we used R packages *rstanarm* and *bayesplot* (see R script *PosteriorCheck*) to perform diagnostics.
+This folder contains R scripts to run analysis for PHENOTYPES and COMMUNITY & ECOSYSTEMS. Results have to be saved in a *results* folder. Then, we used R packages *rstanarm* and *bayesplot* (see R script *PosteriorCheck*) to perform analysis, predictions and diagnostics.
 
 Models comparison were performed using the R package *loo*.
 
+Note that the R script "ANALYSIS_COMMUNITY_ECOSYSTEM.R" do not replicate models for all datasets (i.e, With fish, without fish, Surber,...). Instead, one have to select the dataset to analyse (see lines 35-38).
 
 ## PHENOTYPES
 

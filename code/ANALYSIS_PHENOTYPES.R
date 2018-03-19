@@ -21,8 +21,7 @@ logit<-function(x) {log(x/(1-x))} # logisitic transformation
 gf <- function(x){if(median(x)>=0){mean(x<=0)}else{mean(x>0)}} # function to calculate the proportion of posterior with different sign as mean
 
 ### DIRECTORY ###
-setwd("~/Documents/RESEARCH/PROJECTS/SALMOINVADE/GrowthEnhancement")
-#setwd("~/Documents/mbuoro/Ims/")
+#setwd("~/path/GrowthEnhancement")
 
 ### ANALYSIS ###
 CHAINS  = 3 # number of chains

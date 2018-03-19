@@ -315,7 +315,7 @@ cat(
 fit1 <- stan_glmer(
   WARP2 ~ Treatment * log(Body_Mass) + (1| Channel/Section),
   na.action = "na.omit",
-  data = Data_Morpho_2015_Experimental_Streams,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -327,7 +327,7 @@ fit1 <- stan_glmer(
 fit2 <- stan_glmer(
   WARP2 ~ Treatment + log(Body_Mass) + (1| Channel/Section),
   na.action = "na.omit",
-  data = Data_Morpho_2015_Experimental_Streams,
+  data = df,
   prior = student_t(df = 7), 
   prior_intercept = student_t(df = 7),
   chains = CHAINS, cores = CORES,   iter = ITER, warmup = WARM, seed = SEED,
@@ -469,6 +469,7 @@ cat(
 
 # Load dataset
 df <- read_csv("data/Exp_2_Movement_Habitat_Use_Stream_Mesocosms.csv")
+df <- as.data.frame(df)
 df$Treatment <- as.factor(df$Treatment)
 df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
@@ -476,7 +477,7 @@ df <- within(df, Treatment <- relevel(Treatment, ref = 2)) # SHAM as reference
 
 ## Analysis
 fit1 <- stan_glmer(
-  Movement ~ log(Body_mass)+Treatment+scoring + (1|ID),
+  Movement ~ Treatment+Time_of_the_day+log(Body_mass) + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
@@ -487,7 +488,7 @@ fit1 <- stan_glmer(
 )
 
 fit2 <- stan_glmer(
-  Movement ~ log(Body_mass)*Treatment+scoring + (1|ID),
+  Movement ~ Treatment*log(Body_mass) + Time_of_the_day + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
@@ -498,7 +499,7 @@ fit2 <- stan_glmer(
 )
 
 fit3 <- stan_glmer(
-  Movement ~ log(Body_mass)+Treatment*scoring + (1|ID),
+  Movement ~ Treatment* Time_of_the_day + log(Body_mass) + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
@@ -509,7 +510,7 @@ fit3 <- stan_glmer(
 )
 
 fit4 <- stan_glmer(
-  Movement ~ log(Body_mass)*Treatment*scoring + (1|ID),
+  Movement ~ Treatment * Time_of_the_day * log(Body_mass) + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   data = df,
   na.action = "na.omit",
   prior = student_t(df = 7), 
@@ -521,10 +522,10 @@ fit4 <- stan_glmer(
 
 
 ## Compare models
-loo1 <- loo(fit1,k_threshold = 0.7) # log(Body_mass)+hormone+scoring
-loo2 <- loo(fit2,k_threshold = 0.7) # log(Body_mass)*hormone+scoring
-loo3 <- loo(fit3,k_threshold = 0.7) # log(Body_mass)+hormone*scoring
-loo4 <- loo(fit4,k_threshold = 0.7) # log(Body_mass)*hormone*scoring
+loo1 <- loo(fit1,k_threshold = 0.7) # log(Body_mass)+treatment+time
+loo2 <- loo(fit2,k_threshold = 0.7) # log(Body_mass)*treatment+time
+loo3 <- loo(fit3,k_threshold = 0.7) # log(Body_mass)+treatment*time
+loo4 <- loo(fit4,k_threshold = 0.7) # log(Body_mass)*treatment*time
 loo <- compare(loo1, loo2, loo3, loo4) 
 
 # Select the best model
@@ -555,7 +556,7 @@ cat(round(f*100,1),"% \n")
 # 2. Habitat Use
 
 fit1 <- stan_glmer(
-  Habitat_Use ~ Treatment+Time_of_the_day+log(Body_mass) + (1|day:ID) + (1|group),
+  Habitat_Use ~ Treatment+Time_of_the_day+log(Body_mass) + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   family = binomial(),
   data = df,
   na.action = "na.omit",
@@ -567,7 +568,7 @@ fit1 <- stan_glmer(
 )
 
 fit2 <- stan_glmer(
-  Habitat_Use ~ Treatment*Time_of_the_day+log(Body_mass) + (1|day:ID) + (1|group),
+  Habitat_Use ~ Treatment*Time_of_the_day+log(Body_mass) + (1|Tracking_session:ID) + (1|Stream_mesocosm),
   family = binomial(),
   data = df,
   na.action = "na.omit",
@@ -580,8 +581,8 @@ fit2 <- stan_glmer(
 
 
 ## Compare models
-loo1 <- loo(fit1,k_threshold = 0.7) # log(Body_mass)+Treatment+scoring
-loo2 <- loo(fit2,k_threshold = 0.7) # log(Body_mass)*Treatment+scoring
+loo1 <- loo(fit1,k_threshold = 0.7) # log(Body_mass)+Treatment+time
+loo2 <- loo(fit2,k_threshold = 0.7) # log(Body_mass)*Treatment+time
 loo <- compare(loo1, loo2)
 
 # Select the best model
@@ -677,7 +678,6 @@ best <- N_Excretion
 if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
   model.name = "Exp_3_Excretion_Hatchery_Conditions_N_Excretion"
   ### SAVE
-  best <- NH4_indoor
   save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
@@ -763,7 +763,6 @@ best <- N_Excretion
 if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
   model.name = "Exp_3_Excretion_Stream_Mesocosms_N_excretion"
   ### SAVE
-  best <- NH4_outdoor
   save(best, file=paste0("results/IMS2016_",model.name,".Rdata"))
 }
 

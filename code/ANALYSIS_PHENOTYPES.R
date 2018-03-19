@@ -763,7 +763,7 @@ best <- N_Excretion
 if (any(summary(best)[, "Rhat"] > 1.1)==FALSE){ # should be FALSE
   model.name = "Exp_3_Excretion_Stream_Mesocosms_N_excretion"
   ### SAVE
-  save(best, file=paste0("results/IMS2016_",model.name,".Rdata"))
+  save(best, file=paste0("results/",model.name,".Rdata"))
 }
 
 cat( "\n Posterior distribution: \n")
